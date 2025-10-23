@@ -1,13 +1,13 @@
-import asyncio
 import os
 import time
+import asyncio
 from agno.agent import Agent
 from agno.knowledge.knowledge import Knowledge
 from agno.models.google import Gemini
 from agno.vectordb.chroma import ChromaDb
 from dotenv import load_dotenv
 
-# 🔹 Load environment
+# 🔹 Load environment variables
 load_dotenv()
 os.getenv("GOOGLE_API_KEY")
 os.getenv("EXA_API_KEY")
@@ -19,6 +19,12 @@ CHROMA_DIR = "./legal_chromadb"
 def init_knowledge():
     print("🧠 Initializing ChromaDB knowledge store...")
     start = time.time()
+
+    # ✅ Ensure the ChromaDB directory exists
+    if not os.path.exists(CHROMA_DIR):
+        os.makedirs(CHROMA_DIR)
+        print(f"📁 Created local Chroma directory: {CHROMA_DIR}")
+
     try:
         knowledge = Knowledge(
             vector_db=ChromaDb(
@@ -35,7 +41,7 @@ def init_knowledge():
 knowledge = init_knowledge()
 
 # ⚖️ Add Indian Legal Documents (run once)
-async def add_legal_docs():
+async def ingest_docs():
     print("📘 Ingesting Indian legal documents into ChromaDB...")
     start = time.time()
     try:
@@ -45,14 +51,14 @@ async def add_legal_docs():
                 "https://www.indiacode.nic.in/bitstream/123456789/4219/1/THE-INDIAN-PENAL-CODE-1860.pdf",  # IPC 1860
             ]
         )
-        print(f"✅ Documents added successfully in {round(time.time() - start, 2)} sec.")
+        print(f"✅ Documents ingested successfully in {round(time.time() - start, 2)} sec.")
     except Exception as e:
-        print(f"❌ Failed to add legal docs: {e}")
+        print(f"❌ Failed to ingest: {e}")
 
-# Uncomment this line once to ingest
-# asyncio.run(add_legal_docs())
+# Uncomment below line once to ingest documents
+# asyncio.run(ingest_docs())
 
-# 🧩 Create Legal Agent
+# 🤖 Create Legal Agent
 def create_legal_agent():
     print("🤖 Creating IndianLegalAdvisor agent...")
     return Agent(
@@ -72,7 +78,11 @@ def create_legal_agent():
 
 # 🧠 Example test run
 if __name__ == "__main__":
+    # ⚠️ Run once to create vector DB
+    # asyncio.run(ingest_docs())
+
     question = "What are the penalties for email spoofing under the IT Act in India?"
     legal_agent = create_legal_agent()
     print("🚀 Running AI query...\n")
-    legal_agent.print_response(question, stream=True)
+    ans = legal_agent.print_response(question, stream=True)
+    print(ans)
